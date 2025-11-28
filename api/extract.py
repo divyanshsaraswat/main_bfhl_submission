@@ -5,6 +5,7 @@ Main endpoint: /api/extract
 
 import json
 import sys
+import os
 from pathlib import Path
 
 # Add project root to path
@@ -19,9 +20,13 @@ from src.core.page_classifier import PageClassifier
 from src.core.hackrx_adapter import HackRxAdapter
 
 
+# Check for environment variables
+GOOGLE_CREDENTIALS = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
+
 # Initialize components (reused across requests)
-ocr_processor = OCRProcessor(use_google_vision=True)
-page_classifier = PageClassifier(use_llm=False)
+ocr_processor = OCRProcessor(use_google_vision=bool(GOOGLE_CREDENTIALS))
+page_classifier = PageClassifier(use_llm=bool(GEMINI_API_KEY), llm_api_key=GEMINI_API_KEY)
 
 
 def handler(request):
@@ -34,6 +39,13 @@ def handler(request):
     try:
         # Parse request
         if request.get("method") == "GET":
+            # Build warning message if env vars not set
+            warnings = []
+            if not GOOGLE_CREDENTIALS:
+                warnings.append("GOOGLE_APPLICATION_CREDENTIALS not set - using fallback OCR (lower accuracy)")
+            if not GEMINI_API_KEY:
+                warnings.append("GEMINI_API_KEY not set - using rule-based page classification")
+            
             return {
                 "statusCode": 200,
                 "headers": {"Content-Type": "application/json"},
@@ -42,7 +54,8 @@ def handler(request):
                     "version": "2.0.0",
                     "endpoint": "/api/extract",
                     "method": "POST",
-                    "docs": "https://github.com/divyanshsaraswat/main_bfhl_submission"
+                    "docs": "https://github.com/divyanshsaraswat/main_bfhl_submission",
+                    "warnings": warnings if warnings else None
                 }
             }
         
@@ -73,6 +86,7 @@ def handler(request):
                 "headers": {"Content-Type": "application/json"},
                 "body": {
                     "is_success": False,
+                    "message": f"OCR processing failed: {str(e)}",
                     "token_usage": {"total_tokens": 0, "input_tokens": 0, "output_tokens": 0},
                     "data": {"pagewise_line_items": [], "total_item_count": 0}
                 }
@@ -84,6 +98,7 @@ def handler(request):
                 "headers": {"Content-Type": "application/json"},
                 "body": {
                     "is_success": False,
+                    "message": "No text extracted from document",
                     "token_usage": {"total_tokens": 0, "input_tokens": 0, "output_tokens": 0},
                     "data": {"pagewise_line_items": [], "total_item_count": 0}
                 }

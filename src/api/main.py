@@ -58,13 +58,25 @@ page_classifier = PageClassifier(
 @app.get("/")
 async def root():
     """Root endpoint"""
-    return {
+    # Check for environment variables
+    warnings = []
+    if not os.getenv('GOOGLE_APPLICATION_CREDENTIALS'):
+        warnings.append("GOOGLE_APPLICATION_CREDENTIALS not set - using fallback OCR (lower accuracy)")
+    if not os.getenv('GEMINI_API_KEY'):
+        warnings.append("GEMINI_API_KEY not set - using rule-based page classification")
+    
+    response = {
         "service": "Bill Extraction API",
         "version": "2.0.0",
         "status": "running",
         "endpoint": "/extract",
         "docs": "/docs"
     }
+    
+    if warnings:
+        response["warnings"] = warnings
+    
+    return response
 
 
 @app.get("/health")

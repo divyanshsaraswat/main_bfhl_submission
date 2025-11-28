@@ -125,11 +125,15 @@ BFHL/
 # Install Vercel CLI
 npm i -g vercel
 
-# Deploy
+# Deploy to production
 vercel --prod
 ```
 
-Your API will be at: `https://your-project.vercel.app/api/extract`
+**Your API will be at**: `https://your-project.vercel.app/api/extract`
+
+**Add Environment Variables in Vercel Dashboard** (optional for better accuracy):
+- `GOOGLE_APPLICATION_CREDENTIALS` - Google Cloud Vision API credentials
+- `GEMINI_API_KEY` - Google Gemini API key
 
 ### Render (Free)
 
