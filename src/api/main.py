@@ -1,6 +1,6 @@
 """
-FastAPI Application for Bill Extraction & Validation Agent
-Provides REST API endpoints for bill processing
+FastAPI Application for HackRx Bill Extraction
+Provides REST API endpoint for bill processing from document URLs
 """
 
 from fastapi import FastAPI, HTTPException
@@ -33,9 +33,9 @@ logger = logging.getLogger(__name__)
 
 # Create FastAPI app
 app = FastAPI(
-    title="Bill Extraction & Validation Agent",
-    description="Production-grade API for extracting structured data from medical bills with fraud detection",
-    version="1.0.0"
+    title="HackRx Bill Extraction API",
+    description="Production-grade API for extracting structured data from medical bills",
+    version="2.0.0"
 )
 
 # Add CORS middleware
@@ -59,14 +59,11 @@ page_classifier = PageClassifier(
 async def root():
     """Root endpoint"""
     return {
-        "service": "Bill Extraction & Validation Agent",
-        "version": "1.0.0",
+        "service": "HackRx Bill Extraction API",
+        "version": "2.0.0",
         "status": "running",
-        "endpoints": {
-            "hackrx": "/extract-bill-data",
-            "legacy": "/extract",
-            "health": "/health"
-        }
+        "endpoint": "/extract-bill-data",
+        "docs": "/docs"
     }
 
 
@@ -75,7 +72,7 @@ async def health_check():
     """Health check endpoint"""
     return {
         "status": "healthy",
-        "service": "bill-extraction-agent"
+        "service": "hackrx-bill-extraction"
     }
 
 
@@ -88,6 +85,42 @@ async def extract_bill_data(request: DocumentInput) -> HackRxResponse:
     
     **Input**: DocumentInput with document URL
     **Output**: HackRxResponse with pagewise line items and token usage
+    
+    **Example Request:**
+    ```json
+    {
+      "document": "https://example.com/bill.png"
+    }
+    ```
+    
+    **Example Response:**
+    ```json
+    {
+      "is_success": true,
+      "token_usage": {
+        "total_tokens": 0,
+        "input_tokens": 0,
+        "output_tokens": 0
+      },
+      "data": {
+        "pagewise_line_items": [
+          {
+            "page_no": "1",
+            "page_type": "Bill Detail",
+            "bill_items": [
+              {
+                "item_name": "Consultation Fee",
+                "item_amount": 500.0,
+                "item_rate": 500.0,
+                "item_quantity": 1.0
+              }
+            ]
+          }
+        ],
+        "total_item_count": 1
+      }
+    }
+    ```
     """
     try:
         logger.info(f"Received HackRx extraction request for document: {request.document[:100]}...")
@@ -144,77 +177,6 @@ async def extract_bill_data(request: DocumentInput) -> HackRxResponse:
             token_usage={"total_tokens": 0, "input_tokens": 0, "output_tokens": 0},
             data={"pagewise_line_items": [], "total_item_count": 0}
         )
-
-
-@app.post("/extract", response_model=BillExtractionOutput)
-async def extract_bill(ocr_input: OCRInput) -> BillExtractionOutput:
-    """
-    Main extraction endpoint (Legacy)
-    
-    Accepts OCR tokens and returns structured bill data with fraud detection.
-    
-    **Input**: OCRInput schema with tokens array
-    **Output**: BillExtractionOutput with line items, totals, and fraud signals
-    """
-    try:
-        logger.info(f"Received extraction request with {len(ocr_input.tokens)} tokens")
-        
-        # Create extractor and process
-        extractor = BillExtractor()
-        result = extractor.extract(ocr_input)
-        
-        logger.info(f"Extraction completed with status: {result.meta.status}")
-        
-        return result
-    
-    except ValidationError as e:
-        logger.error(f"Validation error: {str(e)}")
-        raise HTTPException(status_code=422, detail=str(e))
-    
-    except Exception as e:
-        logger.error(f"Extraction error: {str(e)}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
-
-
-@app.post("/extract-json")
-async def extract_bill_from_json(data: Dict[str, Any]) -> JSONResponse:
-    """
-    Alternative endpoint accepting raw JSON
-    
-    Useful for testing and debugging
-    """
-    try:
-        # Parse into OCRInput
-        ocr_input = OCRInput(**data)
-        
-        # Extract
-        extractor = BillExtractor()
-        result = extractor.extract(ocr_input)
-        
-        # Return as JSON
-        return JSONResponse(content=result.model_dump())
-    
-    except ValidationError as e:
-        logger.error(f"Validation error: {str(e)}")
-        raise HTTPException(status_code=422, detail=str(e))
-    
-    except Exception as e:
-        logger.error(f"Extraction error: {str(e)}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
-
-
-@app.post("/validate-input")
-async def validate_input(ocr_input: OCRInput):
-    """
-    Validate OCR input without processing
-    
-    Useful for testing input format
-    """
-    return {
-        "status": "valid",
-        "token_count": len(ocr_input.tokens),
-        "pages": ocr_input.total_pages
-    }
 
 
 if __name__ == "__main__":

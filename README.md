@@ -75,6 +75,8 @@ curl -X POST "http://localhost:8000/extract-bill-data" \
 
 ### Endpoint: `/extract-bill-data`
 
+The primary (and only) endpoint for bill extraction.
+
 **Request:**
 ```json
 {
@@ -110,6 +112,12 @@ curl -X POST "http://localhost:8000/extract-bill-data" \
   }
 }
 ```
+
+### Other Endpoints
+
+- `GET /` - Service information
+- `GET /health` - Health check
+- `GET /docs` - Interactive API documentation
 
 ## 🏗️ Architecture
 
