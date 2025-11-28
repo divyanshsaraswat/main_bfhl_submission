@@ -1,0 +1,218 @@
+{
+    "tokens": [
+        {
+            "text": "MEDICAL",
+            "bbox": [
+                50,
+                50,
+                150,
+                70
+            ],
+            "page": 1,
+            "confidence": 0.95
+        },
+        {
+            "text": "BILL",
+            "bbox": [
+                160,
+                50,
+                210,
+                70
+            ],
+            "page": 1,
+            "confidence": 0.96
+        },
+        {
+            "text": "Particulars",
+            "bbox": [
+                50,
+                200,
+                180,
+                220
+            ],
+            "page": 1,
+            "confidence": 0.93
+        },
+        {
+            "text": "Qty",
+            "bbox": [
+                350,
+                200,
+                390,
+                220
+            ],
+            "page": 1,
+            "confidence": 0.95
+        },
+        {
+            "text": "Rate",
+            "bbox": [
+                450,
+                200,
+                500,
+                220
+            ],
+            "page": 1,
+            "confidence": 0.94
+        },
+        {
+            "text": "Amount",
+            "bbox": [
+                600,
+                200,
+                680,
+                220
+            ],
+            "page": 1,
+            "confidence": 0.96
+        },
+        {
+            "text": "Consultation",
+            "bbox": [
+                50,
+                250,
+                180,
+                270
+            ],
+            "page": 1,
+            "confidence": 0.92
+        },
+        {
+            "text": "1",
+            "bbox": [
+                350,
+                250,
+                370,
+                270
+            ],
+            "page": 1,
+            "confidence": 0.94
+        },
+        {
+            "text": "500",
+            "bbox": [
+                450,
+                250,
+                490,
+                270
+            ],
+            "page": 1,
+            "confidence": 0.93
+        },
+        {
+            "text": "600",
+            "bbox": [
+                600,
+                250,
+                650,
+                270
+            ],
+            "page": 1,
+            "confidence": 0.95
+        },
+        {
+            "text": "Blood",
+            "bbox": [
+                50,
+                300,
+                100,
+                320
+            ],
+            "page": 1,
+            "confidence": 0.91
+        },
+        {
+            "text": "Test",
+            "bbox": [
+                110,
+                300,
+                160,
+                320
+            ],
+            "page": 1,
+            "confidence": 0.92
+        },
+        {
+            "text": "2",
+            "bbox": [
+                350,
+                300,
+                370,
+                320
+            ],
+            "page": 1,
+            "confidence": 0.95
+        },
+        {
+            "text": "300",
+            "bbox": [
+                450,
+                300,
+                490,
+                320
+            ],
+            "page": 1,
+            "confidence": 0.94
+        },
+        {
+            "text": "500",
+            "bbox": [
+                600,
+                300,
+                650,
+                320
+            ],
+            "page": 1,
+            "confidence": 0.96
+        },
+        {
+            "text": "Grand",
+            "bbox": [
+                50,
+                500,
+                110,
+                520
+            ],
+            "page": 1,
+            "confidence": 0.95
+        },
+        {
+            "text": "Total",
+            "bbox": [
+                120,
+                500,
+                180,
+                520
+            ],
+            "page": 1,
+            "confidence": 0.96
+        },
+        {
+            "text": "Rs.",
+            "bbox": [
+                550,
+                500,
+                590,
+                520
+            ],
+            "page": 1,
+            "confidence": 0.94
+        },
+        {
+            "text": "1100",
+            "bbox": [
+                600,
+                500,
+                660,
+                520
+            ],
+            "page": 1,
+            "confidence": 0.97
+        }
+    ],
+    "total_pages": 1,
+    "metadata": {
+        "source": "fraud_test_bill",
+        "type": "test_data_with_fraud"
+    }
+}
