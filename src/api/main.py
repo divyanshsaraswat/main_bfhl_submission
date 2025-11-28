@@ -33,8 +33,8 @@ logger = logging.getLogger(__name__)
 
 # Create FastAPI app
 app = FastAPI(
-    title="HackRx Bill Extraction API",
-    description="Production-grade API for extracting structured data from medical bills",
+    title="Bill Extraction API",
+    description="Extract structured data from medical bills",
     version="2.0.0"
 )
 
@@ -59,10 +59,10 @@ page_classifier = PageClassifier(
 async def root():
     """Root endpoint"""
     return {
-        "service": "HackRx Bill Extraction API",
+        "service": "Bill Extraction API",
         "version": "2.0.0",
         "status": "running",
-        "endpoint": "/extract-bill-data",
+        "endpoint": "/extract",
         "docs": "/docs"
     }
 
@@ -72,19 +72,19 @@ async def health_check():
     """Health check endpoint"""
     return {
         "status": "healthy",
-        "service": "hackrx-bill-extraction"
+        "service": "bill-extraction"
     }
 
 
-@app.post("/extract-bill-data", response_model=HackRxResponse)
+@app.post("/extract", response_model=HackRxResponse)
 async def extract_bill_data(request: DocumentInput) -> HackRxResponse:
     """
-    HackRx Bill Extraction Endpoint
+    Bill Extraction Endpoint
     
-    Accepts a document URL and returns structured bill data in HackRx format.
+    Accepts a document URL and returns structured bill data.
     
-    **Input**: DocumentInput with document URL
-    **Output**: HackRxResponse with pagewise line items and token usage
+    **Input**: Document URL
+    **Output**: Pagewise line items with amounts, rates, and quantities
     
     **Example Request:**
     ```json
@@ -123,7 +123,7 @@ async def extract_bill_data(request: DocumentInput) -> HackRxResponse:
     ```
     """
     try:
-        logger.info(f"Received HackRx extraction request for document: {request.document[:100]}...")
+        logger.info(f"Received extraction request for document: {request.document[:100]}...")
         
         # Step 1: Download and OCR the document
         try:
@@ -152,19 +152,19 @@ async def extract_bill_data(request: DocumentInput) -> HackRxResponse:
             metadata={"source": request.document}
         )
         
-        # Step 3: Extract bill data using existing extractor
+        # Step 3: Extract bill data
         extractor = BillExtractor()
         extraction_result = extractor.extract(ocr_input)
         
         logger.info(f"Extraction completed with status: {extraction_result.meta.status}")
         
-        # Step 4: Convert to HackRx format
+        # Step 4: Convert to response format
         adapter = HackRxAdapter(page_classifier)
-        hackrx_response = adapter.convert_to_hackrx_format(extraction_result, tokens)
+        response = adapter.convert_to_hackrx_format(extraction_result, tokens)
         
-        logger.info(f"HackRx response prepared: {hackrx_response.data.total_item_count} items")
+        logger.info(f"Response prepared: {response.data.total_item_count} items")
         
-        return hackrx_response
+        return response
     
     except ValidationError as e:
         logger.error(f"Validation error: {str(e)}")

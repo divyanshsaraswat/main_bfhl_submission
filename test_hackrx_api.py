@@ -28,7 +28,7 @@ def test_health_check():
 
 
 def test_extract_bill_data(document_url: str) -> Dict[str, Any]:
-    """Test /extract-bill-data endpoint"""
+    """Test /extract endpoint"""
     print(f"\n=== Testing Bill Extraction ===")
     print(f"Document: {document_url[:80]}...")
     
@@ -36,7 +36,7 @@ def test_extract_bill_data(document_url: str) -> Dict[str, Any]:
     
     start_time = time.time()
     response = requests.post(
-        f"{API_BASE_URL}/extract-bill-data",
+        f"{API_BASE_URL}/extract",
         json=payload,
         headers={"Content-Type": "application/json"}
     )

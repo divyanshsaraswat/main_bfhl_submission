@@ -1,81 +1,24 @@
-# HackRx Bill Extraction API
+# Bill Extraction API
 
-A production-grade bill extraction system that processes medical bills from document images and extracts structured line item data with high accuracy.
-
-## 🎯 Problem Statement
-
-Extract line item details from multi-page medical bills including:
-- Individual line item amounts, rates, and quantities
-- Sub-totals (where they exist)
-- Final total with accurate reconciliation
-- Ensure no missed items and no double-counting
-
-## ✨ Features
-
-- **Document URL Processing**: Accepts image URLs directly
-- **OCR Integration**: Google Cloud Vision API with fallback support
-- **Smart Page Classification**: Categorizes pages as "Bill Detail", "Final Bill", or "Pharmacy"
-- **Accurate Extraction**: Table parsing with column detection
-- **Fraud Detection**: Identifies arithmetic mismatches and anomalies
-- **Token Tracking**: Monitors LLM API usage
-- **REST API**: FastAPI-based with automatic documentation
+Extract structured line item data from medical bills with high accuracy.
 
 ## 🚀 Quick Start
 
-### Prerequisites
-
-- Python 3.8+
-- Google Cloud Vision API credentials (optional but recommended)
-
-### Installation
-
 ```bash
-# 1. Clone the repository
-git clone <your-repo-url>
-cd BFHL
-
-# 2. Create virtual environment
-python -m venv venv
-venv\Scripts\activate  # Windows
-# source venv/bin/activate  # Linux/Mac
-
-# 3. Install dependencies
+# Install dependencies
 pip install -r requirements.txt
 
-# 4. Set up environment variables (optional)
-cp .env.example .env
-# Edit .env and add your Google Cloud credentials
-```
-
-### Running the Server
-
-```bash
-# Start the server
+# Start server
 python run.py
-
-# Server will be available at:
-# - API: http://localhost:8000
-# - Docs: http://localhost:8000/docs
-# - Health: http://localhost:8000/health
 ```
 
-### Testing the API
+Server runs at: **http://localhost:8000**
 
-```bash
-# Test with the provided test script
-python test_hackrx_api.py
+## 📋 API
 
-# Or use curl
-curl -X POST "http://localhost:8000/extract-bill-data" \
-  -H "Content-Type: application/json" \
-  -d '{"document": "https://hackrx.blob.core.windows.net/assets/datathon-IIT/sample_2.png?..."}'
-```
+### POST `/extract`
 
-## 📋 API Specification
-
-### Endpoint: `/extract-bill-data`
-
-The primary (and only) endpoint for bill extraction.
+Extract bill data from a document URL.
 
 **Request:**
 ```json
@@ -115,154 +58,112 @@ The primary (and only) endpoint for bill extraction.
 
 ### Other Endpoints
 
-- `GET /` - Service information
+- `GET /` - Service info
 - `GET /health` - Health check
-- `GET /docs` - Interactive API documentation
-
-## 🏗️ Architecture
-
-```
-BFHL/
-├── src/
-│   ├── core/                    # Core extraction logic
-│   │   ├── ocr_processor.py     # Document download & OCR
-│   │   ├── page_classifier.py   # Page type classification
-│   │   ├── bill_extractor.py    # Main extraction engine
-│   │   ├── table_parser.py      # Table structure parsing
-│   │   ├── hackrx_adapter.py    # Format conversion
-│   │   ├── fraud_detector.py    # Fraud detection
-│   │   ├── models.py            # Internal data models
-│   │   └── utils.py             # Utility functions
-│   └── api/                     # API layer
-│       ├── main.py              # FastAPI application
-│       └── hackrx_models.py     # HackRx API schemas
-├── config/                      # Configuration
-├── tests/                       # Test suite
-├── test_data/                   # Sample data
-├── run.py                       # Server launcher
-├── test_hackrx_api.py          # API test script
-└── requirements.txt             # Dependencies
-```
-
-## 🔧 Configuration
-
-### OCR Service
-
-The system supports multiple OCR backends:
-
-1. **Google Cloud Vision** (Recommended)
-   - Set `GOOGLE_APPLICATION_CREDENTIALS` in `.env`
-   - Best accuracy for medical bills
-
-2. **Tesseract OCR** (Fallback)
-   - Install: `pip install pytesseract`
-   - Free but lower accuracy
-
-### Page Classification
-
-Two modes available:
-
-1. **Rule-based** (Default)
-   - No API key required
-   - Uses keyword matching
-
-2. **LLM-based** (Optional)
-   - Set `GEMINI_API_KEY` in `.env`
-   - Higher accuracy
-
-## 📊 Accuracy Optimization
-
-The system ensures high accuracy through:
-
-1. **No Missed Items**: Comprehensive table parsing with multiple fallback strategies
-2. **No Double-Counting**: Deduplication based on page, row, and content
-3. **Reconciliation**: Compares extracted total vs. actual bill total
-4. **Confidence Scoring**: Each item has a confidence score
-5. **Fraud Detection**: Identifies arithmetic errors and anomalies
+- `GET /docs` - Interactive API docs
 
 ## 🧪 Testing
 
 ```bash
-# Run unit tests
-python -m pytest tests/
-
-# Run integration test
+# Test the API
 python test_hackrx_api.py
 
-# Test specific document
-curl -X POST "http://localhost:8000/extract-bill-data" \
+# Or use curl
+curl -X POST "http://localhost:8000/extract" \
   -H "Content-Type: application/json" \
   -d '{"document": "YOUR_DOCUMENT_URL"}'
 ```
 
-## 🚢 Deployment
+## ⚙️ Configuration
 
-### Option 1: Render
+### Optional: Google Cloud Vision (Recommended)
 
-1. Create account at [render.com](https://render.com)
-2. Connect your GitHub repository
-3. Create new Web Service
-4. Set environment variables
-5. Deploy
+For best OCR accuracy:
 
-### Option 2: Railway
+1. Get service account JSON from [Google Cloud Console](https://console.cloud.google.com/)
+2. Enable Cloud Vision API
+3. Set environment variable:
+   ```bash
+   set GOOGLE_APPLICATION_CREDENTIALS=path/to/key.json
+   ```
 
-1. Create account at [railway.app](https://railway.app)
-2. Connect GitHub repository
-3. Add environment variables
-4. Deploy
+Without it, the API uses fallback OCR (lower accuracy).
 
-### Option 3: Docker
+## 📁 Project Structure
 
-```bash
-# Build image
-docker build -t bill-extractor .
-
-# Run container
-docker run -p 8000:8000 -e GOOGLE_APPLICATION_CREDENTIALS=/app/credentials.json bill-extractor
+```
+BFHL/
+├── src/
+│   ├── api/              # FastAPI application
+│   │   ├── main.py       # API endpoints
+│   │   └── hackrx_models.py
+│   └── core/             # Extraction logic
+│       ├── ocr_processor.py
+│       ├── bill_extractor.py
+│       ├── page_classifier.py
+│       └── ...
+├── config/               # Configuration
+├── tests/                # Tests
+├── run.py                # Server launcher
+└── requirements.txt      # Dependencies
 ```
 
-## 📝 Environment Variables
+## 🎯 Features
 
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `GOOGLE_APPLICATION_CREDENTIALS` | Path to Google Cloud service account JSON | Recommended |
-| `GEMINI_API_KEY` | Google Gemini API key for LLM classification | Optional |
-| `HOST` | Server host (default: 0.0.0.0) | No |
-| `PORT` | Server port (default: 8000) | No |
+- **Document URL Processing** - Direct image URL input
+- **OCR Integration** - Google Cloud Vision with fallback
+- **Page Classification** - Auto-categorizes pages (Bill Detail/Final Bill/Pharmacy)
+- **Accurate Extraction** - Table parsing with column detection
+- **No Missed Items** - Comprehensive extraction strategies
+- **No Double-Counting** - Deduplication logic
 
-## 🔍 Troubleshooting
+## 🚢 Deployment
 
-**OCR not working?**
-- Check Google Cloud credentials
-- Verify API is enabled in GCP console
-- Try fallback: `pip install pytesseract`
+### Render (Free)
+
+1. Create account at [render.com](https://render.com)
+2. Connect GitHub repository
+3. Create Web Service
+4. Set build command: `pip install -r requirements.txt`
+5. Set start command: `uvicorn src.api.main:app --host 0.0.0.0 --port $PORT`
+6. Add environment variables (optional):
+   - `GOOGLE_APPLICATION_CREDENTIALS` (as secret file)
+7. Deploy
+
+### Railway
+
+1. Create account at [railway.app](https://railway.app)
+2. Deploy from GitHub
+3. Railway auto-detects Python
+4. Add environment variables
+5. Deploy
+
+### Docker
+
+```bash
+docker build -t bill-extractor .
+docker run -p 8000:8000 bill-extractor
+```
+
+## 🔧 Troubleshooting
+
+**Server won't start?**
+- Check port 8000 is available
+- Verify virtual environment is active
 
 **Low accuracy?**
+- Set up Google Cloud Vision API
 - Ensure high-quality input images
-- Check page classification results
-- Review confidence scores in output
 
-**Server not starting?**
-- Check port 8000 is available
-- Verify all dependencies installed
-- Check logs for errors
+**Import errors?**
+- Reinstall: `pip install -r requirements.txt --force-reinstall`
 
 ## 📚 Documentation
 
 - **API Docs**: http://localhost:8000/docs (when server running)
-- **Implementation Plan**: [docs/implementation_plan.md](docs/implementation_plan.md)
-- **Project Overview**: [PROJECT_OVERVIEW.md](PROJECT_OVERVIEW.md)
-
-## 🤝 Contributing
-
-This is a hackathon submission. For questions or issues, please contact the development team.
-
-## 📄 License
-
-MIT License - See LICENSE file for details
+- **GitHub**: [Repository Link](https://github.com/divyanshsaraswat/main_bfhl_submission)
 
 ---
 
-**Version**: 2.0.0 (HackRx Edition)  
-**Last Updated**: 2025-11-28
+**Version**: 2.0.0  
+**License**: MIT
