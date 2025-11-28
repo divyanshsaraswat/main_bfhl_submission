@@ -3,10 +3,12 @@ Vercel Serverless Function for Bill Extraction API
 Main endpoint: /api/extract
 """
 
+from http.server import BaseHTTPRequestHandler
 import json
 import sys
 import os
 from pathlib import Path
+from urllib.parse import parse_qs
 
 # Add project root to path
 project_root = Path(__file__).parent.parent
@@ -29,109 +31,100 @@ ocr_processor = OCRProcessor(use_google_vision=bool(GOOGLE_CREDENTIALS))
 page_classifier = PageClassifier(use_llm=bool(GEMINI_API_KEY), llm_api_key=GEMINI_API_KEY)
 
 
-def handler(request):
-    """
-    Vercel serverless function handler for /api/extract
+class handler(BaseHTTPRequestHandler):
+    """Vercel serverless function handler"""
     
-    Accepts: {"document": "https://example.com/bill.png"}
-    Returns: HackRx formatted response
-    """
-    try:
-        # Parse request
-        if request.get("method") == "GET":
-            # Build warning message if env vars not set
-            warnings = []
-            if not GOOGLE_CREDENTIALS:
-                warnings.append("GOOGLE_APPLICATION_CREDENTIALS not set - using fallback OCR (lower accuracy)")
-            if not GEMINI_API_KEY:
-                warnings.append("GEMINI_API_KEY not set - using rule-based page classification")
-            
-            return {
-                "statusCode": 200,
-                "headers": {"Content-Type": "application/json"},
-                "body": {
-                    "service": "Bill Extraction API",
-                    "version": "2.0.0",
-                    "endpoint": "/api/extract",
-                    "method": "POST",
-                    "docs": "https://github.com/divyanshsaraswat/main_bfhl_submission",
-                    "warnings": warnings if warnings else None
-                }
-            }
+    def do_GET(self):
+        """Handle GET requests"""
+        # Build warning message if env vars not set
+        warnings = []
+        if not GOOGLE_CREDENTIALS:
+            warnings.append("GOOGLE_APPLICATION_CREDENTIALS not set - using fallback OCR (lower accuracy)")
+        if not GEMINI_API_KEY:
+            warnings.append("GEMINI_API_KEY not set - using rule-based page classification")
         
-        # Get request body
-        body = request.get("body", {})
-        if isinstance(body, str):
-            body = json.loads(body)
+        response_data = {
+            "service": "Bill Extraction API",
+            "version": "2.0.0",
+            "endpoint": "/api/extract",
+            "method": "POST",
+            "docs": "https://github.com/divyanshsaraswat/main_bfhl_submission"
+        }
         
-        # Validate input
-        if "document" not in body:
-            return {
-                "statusCode": 400,
-                "headers": {"Content-Type": "application/json"},
-                "body": {
-                    "is_success": False,
-                    "message": "Missing 'document' field in request body"
-                }
-            }
+        if warnings:
+            response_data["warnings"] = warnings
         
-        document_url = body["document"]
-        
-        # Step 1: Download and OCR
+        self.send_response(200)
+        self.send_header('Content-Type', 'application/json')
+        self.end_headers()
+        self.wfile.write(json.dumps(response_data).encode())
+    
+    def do_POST(self):
+        """Handle POST requests"""
         try:
-            tokens, total_pages = ocr_processor.process_document(document_url)
+            # Read request body
+            content_length = int(self.headers.get('Content-Length', 0))
+            body = self.rfile.read(content_length).decode('utf-8')
+            
+            # Parse JSON
+            try:
+                data = json.loads(body)
+            except json.JSONDecodeError:
+                self._send_error(400, "Invalid JSON in request body")
+                return
+            
+            # Validate input
+            if "document" not in data:
+                self._send_error(400, "Missing 'document' field in request body")
+                return
+            
+            document_url = data["document"]
+            
+            # Step 1: Download and OCR
+            try:
+                tokens, total_pages = ocr_processor.process_document(document_url)
+            except Exception as e:
+                self._send_error(500, f"OCR processing failed: {str(e)}")
+                return
+            
+            if not tokens:
+                self._send_error(400, "No text extracted from document")
+                return
+            
+            # Step 2: Create OCR input
+            ocr_input = OCRInput(
+                tokens=tokens,
+                total_pages=total_pages,
+                metadata={"source": document_url}
+            )
+            
+            # Step 3: Extract bill data
+            extractor = BillExtractor()
+            extraction_result = extractor.extract(ocr_input)
+            
+            # Step 4: Convert to response format
+            adapter = HackRxAdapter(page_classifier)
+            response = adapter.convert_to_hackrx_format(extraction_result, tokens)
+            
+            # Send response
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps(response.model_dump()).encode())
+        
         except Exception as e:
-            return {
-                "statusCode": 500,
-                "headers": {"Content-Type": "application/json"},
-                "body": {
-                    "is_success": False,
-                    "message": f"OCR processing failed: {str(e)}",
-                    "token_usage": {"total_tokens": 0, "input_tokens": 0, "output_tokens": 0},
-                    "data": {"pagewise_line_items": [], "total_item_count": 0}
-                }
-            }
-        
-        if not tokens:
-            return {
-                "statusCode": 400,
-                "headers": {"Content-Type": "application/json"},
-                "body": {
-                    "is_success": False,
-                    "message": "No text extracted from document",
-                    "token_usage": {"total_tokens": 0, "input_tokens": 0, "output_tokens": 0},
-                    "data": {"pagewise_line_items": [], "total_item_count": 0}
-                }
-            }
-        
-        # Step 2: Create OCR input
-        ocr_input = OCRInput(
-            tokens=tokens,
-            total_pages=total_pages,
-            metadata={"source": document_url}
-        )
-        
-        # Step 3: Extract bill data
-        extractor = BillExtractor()
-        extraction_result = extractor.extract(ocr_input)
-        
-        # Step 4: Convert to response format
-        adapter = HackRxAdapter(page_classifier)
-        response = adapter.convert_to_hackrx_format(extraction_result, tokens)
-        
-        # Return response
-        return {
-            "statusCode": 200,
-            "headers": {"Content-Type": "application/json"},
-            "body": response.model_dump()
-        }
+            self._send_error(500, f"Internal server error: {str(e)}")
     
-    except Exception as e:
-        return {
-            "statusCode": 500,
-            "headers": {"Content-Type": "application/json"},
-            "body": {
-                "is_success": False,
-                "message": f"Internal server error: {str(e)}"
-            }
+    def _send_error(self, status_code, message):
+        """Send error response"""
+        error_response = {
+            "is_success": False,
+            "message": message,
+            "token_usage": {"total_tokens": 0, "input_tokens": 0, "output_tokens": 0},
+            "data": {"pagewise_line_items": [], "total_item_count": 0}
         }
+        
+        self.send_response(status_code)
+        self.send_header('Content-Type', 'application/json')
+        self.end_headers()
+        self.wfile.write(json.dumps(error_response).encode())
