@@ -41,20 +41,5 @@ env/
 # Logs
 *.log
 logs/
-
-# Test outputs
-test_output/
-test_data/sample_output.json
-
-# Google Cloud credentials
-*.json
-!test_data/*.json
-!config/*.json
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Temporary files
 *.tmp
 *.bak

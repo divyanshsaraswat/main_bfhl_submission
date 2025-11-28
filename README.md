@@ -119,6 +119,18 @@ BFHL/
 
 ## 🚢 Deployment
 
+### Vercel (Recommended - Serverless)
+
+```bash
+# Install Vercel CLI
+npm i -g vercel
+
+# Deploy
+vercel --prod
+```
+
+Your API will be at: `https://your-project.vercel.app/api/extract`
+
 ### Render (Free)
 
 1. Create account at [render.com](https://render.com)
@@ -137,13 +149,6 @@ BFHL/
 3. Railway auto-detects Python
 4. Add environment variables
 5. Deploy
-
-### Docker
-
-```bash
-docker build -t bill-extractor .
-docker run -p 8000:8000 bill-extractor
-```
 
 ## 🔧 Troubleshooting
 

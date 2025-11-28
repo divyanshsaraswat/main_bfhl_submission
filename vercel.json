@@ -1,0 +1,36 @@
+{
+    "version": 2,
+    "builds": [
+        {
+            "src": "api/**/*.py",
+            "use": "@vercel/python"
+        }
+    ],
+    "routes": [
+        {
+            "src": "/api/extract",
+            "dest": "/api/extract.py",
+            "methods": [
+                "GET",
+                "POST"
+            ]
+        },
+        {
+            "src": "/api/health",
+            "dest": "/api/health.py",
+            "methods": [
+                "GET"
+            ]
+        },
+        {
+            "src": "/",
+            "dest": "/api/extract.py",
+            "methods": [
+                "GET"
+            ]
+        }
+    ],
+    "env": {
+        "PYTHON_VERSION": "3.11"
+    }
+}
